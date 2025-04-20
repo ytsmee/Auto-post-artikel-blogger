@@ -1,40 +1,42 @@
-Cara menggunakan script ini
+How to use this script
 
-🧰 Yang Kamu Butuhkan
-Akun Google (Gmail)
+🧰 What You Need
+Google Account (Gmail)
 
-Akun Blogger (sudah punya blog)
-Akses ke Google Apps Script
-RSS feed dari sumber berita (contoh: Kompas, Sindonews)
+Blogger Account (already have a blog)
+Access to Google Apps Script
+RSS feeds from news sources (example: Kompas, Sindonews)
 
-📜 Langkah-Langkah
-1. Buka Google Apps Script
-Kunjungi script.google.com
-Klik + Project Baru
+📜 Steps
+1. Open Google Apps Script
+Visit script.google.com
+Click + New Project
 
-2. Copy dan Paste Script Txt
+2. Copy and Paste Script Txt
 
-3. Aktifkan Blogger API
-Klik menu Layanan (ikon puzzle di kiri)
-Klik + tambahkan layanan
-Cari Blogger API lalu klik Tambah
+3. Activate Blogger API
+Click Services menu (puzzle icon on the left)
+Click + add service
+Search Blogger API then click Add
 
-4. Ambil ID Blog Kamu
-Masuk ke Blogger
-Pilih blog kamu
-Lihat URL-nya, misalnya:
+4. Retrieve Your Blog ID
+Log in to Blogger
+Select your blog
+See the URL, for example:
 Edit
 https://www.blogger.com/blog/posts/1234567890123456789
-Maka ID blog-nya adalah: 1234567890123456789
-Ganti GANTI_DENGAN_ID_BLOG_KAMU di kode dengan ID tersebut.
+Then the blog ID is: 1234567890123456789
+Replace CHANGE_WITH_Your_BLOG_ID in the code with that ID.
 
-5. Jalankan dan Izinkan Akses
-Klik fungsi fetchAndPostRSS
-Klik ikon ▶️ untuk menjalankan
-Izinkan akses ke akun Google kamu
+5. Run and Allow Access
+Click the fetchAndPostRSS function
+Click the icon ▶️ to run
+Allow access to your Google account
 
-6. Buat Jadwal Otomatis
-Klik menu Triggers (ikon jam ⏰ di kiri)
-Klik + Add Trigger
-Pilih fungsi: fetchAndPostRSS
-Pilih waktu misalnya: Time-driven → Hourly
+6. Create Automatic Schedule
+Click the Triggers menu (clock icon ⏰ on the left)
+Click + Add Trigger
+Select the function: fetchAndPostRSS
+Choose the time for example: Time-driven → Hourly
+
+Translated with DeepL.com (free version)
