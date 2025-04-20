@@ -1,0 +1,126 @@
+const RSS_FEED_URLS = [
+  'https://www.kompas.com/rss',
+  'https://tekno.sindonews.com/rss',
+  'https://rss.detik.com/index.php/detikcom',
+  'https://www.liputan6.com/rss',
+  'https://www.merdeka.com/feed/',
+  'https://www.tribunnews.com/rss',
+  'https://www.homeaccentstoday.com/rss-feeds'
+];
+
+const BLOG_ID = '8191992570787792039';
+const CLIENT_ID = '24148317271-0hp46asan9i1d0f9fgo4b6jonu5f8mdb.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REFRESH_TOKEN = '1//04v2FociE1oK-CgYIARAAGAQSNwF-L9IryqZIXjCHBJlse7uov-ffP9XutrBTFLos5dxEFDHYVZTG03bLuqAu2eN81fb78n3XSHQ';
+const LOG_SHEET_NAME = 'PostedLog';
+
+// === Ambil access token ===
+function getAccessToken() {
+  const tokenUrl = 'https://oauth2.googleapis.com/token';
+  const options = {
+    method: 'post',
+    payload: {
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      refresh_token: REFRESH_TOKEN,
+      grant_type: 'refresh_token'
+    },
+    muteHttpExceptions: true
+  };
+  const response = UrlFetchApp.fetch(tokenUrl, options);
+  const result = JSON.parse(response.getContentText());
+  if (result.error) throw new Error(result.error_description);
+  return result.access_token;
+}
+
+// === Posting ke Blogger ===
+function postToBlogger(title, content) {
+  const accessToken = getAccessToken();
+  const url = `https://www.googleapis.com/blogger/v3/blogs/${BLOG_ID}/posts/`;
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ title, content }),
+    headers: { Authorization: `Bearer ${accessToken}` },
+    muteHttpExceptions: true
+  };
+  const response = UrlFetchApp.fetch(url, options);
+  const result = JSON.parse(response.getContentText());
+  if (result.error) throw new Error(result.error.message);
+  return result;
+}
+
+// === Logging ===
+function getLogSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(LOG_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(LOG_SHEET_NAME).appendRow(['Title', 'Link', 'Posted At']);
+  return sheet;
+}
+
+function isAlreadyPosted(link) {
+  const sheet = getLogSheet();
+  const links = sheet.getRange(2, 2, sheet.getLastRow() - 1).getValues().flat();
+  return links.includes(link);
+}
+
+function storePostedLink(title, link) {
+  getLogSheet().appendRow([title, link, new Date()]);
+}
+
+// === SCRAPER berdasarkan situs ===
+function scrapeContent(url) {
+  try {
+    const html = UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText();
+    const domain = url.match(/https?:\/\/([^\/]+)/)[1];
+
+    if (domain.includes('kompas.com')) {
+      return html.match(/<div class="read__content"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    } else if (domain.includes('sindonews.com')) {
+      return html.match(/<div class="detail-text"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    } else if (domain.includes('detik.com')) {
+      return html.match(/<div class="detail__body-text itp_bodycontent"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    } else if (domain.includes('liputan6.com')) {
+      return html.match(/<div class="article-content-body__item-content"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    } else if (domain.includes('merdeka.com')) {
+      return html.match(/<div class="mdk-body-paragraph"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    } else if (domain.includes('tribunnews.com')) {
+      return html.match(/<div class="side-article txt-article"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    }
+
+    return null;
+  } catch (e) {
+    Logger.log(`❌ Gagal scraping ${url}: ${e.message}`);
+    return null;
+  }
+}
+
+// === MAIN FUNCTION ===
+function autoPostFromMultiRSS() {
+  for (const rssUrl of RSS_FEED_URLS) {
+    try {
+      const xml = UrlFetchApp.fetch(rssUrl).getContentText();
+      const doc = XmlService.parse(xml);
+      const items = doc.getRootElement().getChild('channel').getChildren('item');
+
+      for (const item of items) {
+        const title = item.getChildText('title');
+        const link = item.getChildText('link');
+
+        if (isAlreadyPosted(link)) continue;
+
+        let content = scrapeContent(link);
+        if (!content) {
+          content = item.getChildText('description') + `<p><a href="${link}">Baca selengkapnya</a></p>`;
+        }
+
+        postToBlogger(title, content);
+        storePostedLink(title, link);
+        Logger.log(`✅ Berhasil post: ${title}`);
+        return; // hanya satu artikel per run
+      }
+    } catch (e) {
+      Logger.log(`❌ Error RSS ${rssUrl}: ${e.message}`);
+    }
+  }
+}
