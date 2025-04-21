@@ -8,10 +8,10 @@ const RSS_FEED_URLS = [
   'https://www.homeaccentstoday.com/rss-feeds'
 ];
 
-const BLOG_ID = '8191992570787792039';
-const CLIENT_ID = '24148317271-0hp46asan9i1d0f9fgo4b6jonu5f8mdb.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REFRESH_TOKEN = '1//04v2FociE1oK-CgYIARAAGAQSNwF-L9IryqZIXjCHBJlse7uov-ffP9XutrBTFLos5dxEFDHYVZTG03bLuqAu2eN81fb78n3XSHQ';
+const BLOG_ID = 'Your_Blogid';
+const CLIENT_ID = 'Your_Clintid';
+const CLIENT_SECRET = 'Your_ClintSecret';
+const REFRESH_TOKEN = 'Your_Refreshtoken';
 const LOG_SHEET_NAME = 'PostedLog';
 
 // === Ambil access token ===
