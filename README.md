@@ -1,6 +1,6 @@
 How to use this script
 
-🧰 What You Need
+🧰 You Need
 Google Account (Gmail)
 
 Blogger Account (already have a blog)
