@@ -38,5 +38,3 @@ Click the Triggers menu (clock icon ⏰ on the left)
 Click + Add Trigger
 Select the function: fetchAndPostRSS
 Choose the time for example: Time-driven → Hourly
-
-Translated with DeepL.com (free version)
