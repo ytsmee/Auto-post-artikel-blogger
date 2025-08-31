@@ -1,3 +1,17 @@
+const RSS_FEED_URLS = [
+  'https://www.kompas.com/getrss/nasional',
+  'https://nasional.sindonews.com/rss',
+  'http://rss.detik.com/index.php/detikcom',
+  'https://www.liputan6.com/rss',
+  'https://www.tribunnews.com/rss'
+];
+
+const BLOG_ID = 'YOUR_BLOGID';
+const CLIENT_ID = 'YOUR_CLIENTID';
+const CLIENT_SECRET = 'YOUR_CLIENT_SECRET';
+const REFRESH_TOKEN = 'YOUR_REFRESH_TOKEN';
+const LOG_SHEET_NAME = 'PostedLog';
+
 // === Ambil access token ===
 function getAccessToken() {
   const tokenUrl = 'https://oauth2.googleapis.com/token';
@@ -57,24 +71,38 @@ function storePostedLink(title, link) {
   getLogSheet().appendRow([title, link, new Date()]);
 }
 
-// === Generator artikel panjang ===
-function generateSEOArticle(title, description, imageUrl) {
-  // Artikel SEO friendly minimal 500 kata
-  let article = `
-    <p><img src="${imageUrl}" alt="${title}" style="max-width:100%;border-radius:10px;margin-bottom:15px;"></p>
-    <h2>${title}</h2>
-    <p>${description || ''}</p>
-    <p>${title} menjadi salah satu topik yang tengah ramai diperbincangkan masyarakat. Fenomena ini tidak sekadar sebuah berita singkat, melainkan sebuah cerita yang mencerminkan dinamika sosial, politik, maupun budaya yang ada di sekitar kita. Untuk memahami lebih dalam, mari kita telusuri bagaimana isu ini berkembang, apa saja dampaknya, dan mengapa hal tersebut begitu relevan bagi kehidupan kita sehari-hari.</p>
-    <p>Dari sudut pandang historis, peristiwa ini mengingatkan kita pada berbagai momen serupa yang pernah terjadi sebelumnya. Banyak pihak yang mencoba menarik benang merah antara kondisi saat ini dengan pengalaman di masa lalu. Perbandingan semacam ini membantu kita untuk memahami bahwa perjalanan bangsa dan masyarakat selalu penuh dengan lika-liku, pasang surut, serta tantangan yang membutuhkan kebersamaan untuk menghadapinya.</p>
-    <p>Secara emosional, ${title} menimbulkan reaksi yang beragam di tengah publik. Ada yang merespons dengan optimisme dan harapan, namun tak sedikit pula yang menyikapinya dengan kecemasan. Perbedaan reaksi ini mencerminkan betapa pluralnya masyarakat kita, dengan berbagai latar belakang, kepentingan, serta cara pandang yang beragam. Namun di balik itu semua, terdapat kesadaran bahwa peristiwa ini membawa pesan penting yang patut direnungkan bersama.</p>
-    <p>Lebih jauh, jika ditinjau dari perspektif sosial, ${title} menghadirkan dampak yang cukup signifikan. Banyak kalangan yang terinspirasi untuk bergerak, bersuara, bahkan terlibat secara aktif dalam berbagai kegiatan positif. Hal ini menunjukkan bahwa berita atau peristiwa bukan hanya sekadar informasi, melainkan juga pemantik semangat perubahan. Dengan cara ini, masyarakat belajar bahwa setiap isu memiliki potensi untuk membentuk arah masa depan.</p>
-    <p>Tak hanya itu, aspek ekonomi pun ikut terpengaruh. Ketika publik memberikan perhatian besar pada ${title}, muncul dinamika baru di berbagai sektor yang terkait. Media, pelaku usaha, hingga komunitas lokal merespons dengan caranya masing-masing. Beberapa memanfaatkan momentum ini sebagai peluang, sementara yang lain lebih memilih untuk berhati-hati. Semua ini menggambarkan bagaimana sebuah isu dapat menembus berbagai lapisan kehidupan kita.</p>
-    <p>Dari perspektif pribadi, kita pun bisa belajar banyak. ${title} seolah menjadi cermin bagi diri kita masing-masing untuk merenungkan nilai, harapan, dan komitmen yang kita pegang. Apakah kita akan memilih untuk berpangku tangan, ataukah kita justru termotivasi untuk melakukan perubahan? Pertanyaan-pertanyaan ini menjadi penting agar berita tidak hanya berhenti sebagai konsumsi pasif, melainkan juga membangkitkan kesadaran aktif.</p>
-    <p>Pada akhirnya, ${title} lebih dari sekadar sebuah peristiwa. Ia adalah cerita kolektif yang menuntun kita pada pemahaman lebih dalam tentang siapa kita, bagaimana kita menyikapi tantangan, serta ke mana kita ingin melangkah. Dengan menggali makna dan pelajaran dari isu ini, kita bisa memperkuat fondasi kehidupan bermasyarakat yang lebih sehat, adil, dan penuh harapan.</p>
-    <p>Demikianlah ulasan mendalam mengenai ${title}. Semoga artikel ini tidak hanya memberikan informasi, tetapi juga mampu menginspirasi kita semua untuk terus belajar, bertumbuh, dan berkontribusi dalam setiap dinamika yang terjadi di sekitar kita.</p>
-  `;
+// === SCRAPER ===
+function scrapeContentAndImage(url) {
+  try {
+    const html = UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText();
+    const domain = url.match(/https?:\/\/([^\/]+)/)?.[1];
+    if (!domain) return { content: null, image: null };
 
-  return article;
+    let content = null;
+    let image = null;
+
+    if (domain.includes('kompas.com')) {
+      content = html.match(/<div class="read__content"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+      image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    } else if (domain.includes('sindonews.com')) {
+      content = html.match(/<div class="detail-text"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+      image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    } else if (domain.includes('detik.com')) {
+      content = html.match(/<div class="detail__body-text itp_bodycontent"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+      image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    } else if (domain.includes('liputan6.com')) {
+      content = html.match(/<div class="article-content-body__item-content"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+      image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    } else if (domain.includes('tribunnews.com')) {
+      content = html.match(/<div class="side-article txt-article"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+      image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    }
+
+    return { content, image };
+  } catch (e) {
+    Logger.log(`❌ Gagal scraping ${url}: ${e.message}`);
+    return { content: null, image: null };
+  }
 }
 
 // === MAIN FUNCTION ===
@@ -103,35 +131,39 @@ function autoPostFromMultiRSS() {
       }
 
       for (const item of items) {
-        let title, link, description, imageUrl;
+        let title, link, description;
 
         if (root.getName() === 'feed') { // Atom
           title = item.getChildText('title');
           link = item.getChild('link').getAttribute('href').getValue();
-          description = item.getChildText('summary') || '';
-          imageUrl = "https://via.placeholder.com/800x400?text=" + encodeURIComponent(title);
+          description = item.getChildText('summary') || item.getChildText('content');
         } else { // RSS 2.0
           title = item.getChildText('title');
           link = item.getChildText('link');
-          description = item.getChildText('description') || '';
-          let content = item.getChildText('content:encoded') || description;
-          let match = content.match(/<img[^>]+src="([^">]+)"/i);
-          imageUrl = match ? match[1] : "https://via.placeholder.com/800x400?text=" + encodeURIComponent(title);
+          description = item.getChildText('description');
         }
 
-        if (!link) continue;
+        if (!link) {
+          Logger.log(`⚠️ Skip item tanpa link: ${title}`);
+          continue;
+        }
+
         if (isAlreadyPosted(link)) {
           Logger.log(`⏩ Sudah pernah dipost: ${title}`);
           continue;
         }
 
-        // === Generate artikel panjang + gambar ===
-        const content = generateSEOArticle(title, description, imageUrl);
+        const scraped = scrapeContentAndImage(link);
+        let scrapedContent = scraped.content || description || '';
+        let imageTag = scraped.image ? `<p><img src="${scraped.image}" alt="${title}" /></p>` : '';
+
+        // === Prompt AI auto-generator ===
+        const content = `${title} AI auto-generator\n\n${scrapedContent}\n\n${imageTag}`;
 
         postToBlogger(title, content);
         storePostedLink(title, link);
-        Logger.log(`✅ Draft artikel SEO berhasil dibuat: ${title}`);
-        break; // hanya ambil 1 artikel per feed
+        Logger.log(`✅ Draft AI + gambar berhasil dibuat: ${title}`);
+        break; // hanya 1 artikel per feed
       }
     } catch (e) {
       Logger.log(`❌ Error RSS ${rssUrl}: ${e.message}`);
